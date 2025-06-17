@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>퀴즈 게임</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        box-shadow: 2px 2px 12px rgba(0,0,0,0.1);
+    }
+    .hidden { display: none; }
+    button {
+        margin: 5px 0;
+        padding: 8px 12px;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+<h1>퀴즈 분야 선택</h1>
+<div id="category-selection">
+    <button onclick="startQuiz('animal')">동물</button>
+    <button onclick="startQuiz('nonsense')">넌센스</button>
+    <button onclick="startQuiz('common')">상식</button>
+    <button onclick="startQuiz('idiom')">사자성어</button>
+</div>
+
+<div id="quiz-container" class="hidden">
+    <h2 id="question"></h2>
+    <div id="answers"></div>
+    <button onclick="nextQuestion()">다음</button>
+</div>
+
+<div id="result-container" class="hidden">
+    <h2 id="result"></h2>
+    <button onclick="restartQuiz()">다시하기</button>
+    <button onclick="selectNewCategory()">새 분야 선택</button>
+</div>
+
+<script>
+const quizzes = {
+    animal: [
+        { q: '기린의 목은 몇 개의 뼈로 이루어져 있을까?', a: ['7개', '10개', '5개'], correct: 0 },
+        { q: '코끼리는 어떤 감정을 느낄 수 있을까?', a: ['기쁨', '슬픔', '모두'], correct: 2 },
+        { q: '펭귄은 날 수 있을까?', a: ['예', '아니오', '가끔'], correct: 1 },
+        { q: '독사가 가진 독은 어떤 용도일까?', a: ['사냥', '방어', '모두'], correct: 2 },
+        { q: '북극곰의 털 색깔은?', a: ['흰색', '검은색', '투명'], correct: 2 },
+        { q: '돌고래는 어떤 동물군에 속할까?', a: ['어류', '포유류', '파충류'], correct: 1 },
+        { q: '호랑이의 무늬는?', a: ['줄무늬', '반점', '없음'], correct: 0 },
+        { q: '거북이의 등껍질은 무엇으로 이루어졌나?', a: ['뼈와 비늘', '가죽', '나무'], correct: 0 },
+        { q: '박쥐는 어느 계통의 동물일까?', a: ['조류', '포유류', '파충류'], correct: 1 },
+        { q: '개미는 몇 개의 다리를 가지고 있을까?', a: ['4개', '6개', '8개'], correct: 1 },
+        { q: '바다거북은 어떻게 방향을 찾을까?', a: ['별', '지구 자기장', '바람'], correct: 1 },
+        { q: '캥거루가 주로 사는 대륙은?', a: ['아시아', '오스트레일리아', '아프리카'], correct: 1 },
+        { q: '치타가 가장 빠르게 달릴 수 있는 속도는?', a: ['60km/h', '110km/h', '150km/h'], correct: 1 },
+        { q: '파충류는 무엇으로 몸을 덮고 있을까?', a: ['털', '비늘', '깃털'], correct: 1 },
+        { q: '나비의 일생은 어떤 단계가 있을까?', a: ['알-유충-번데기-성충', '알-성충-유충-번데기', '유충-알-성충-번데기'], correct: 0 },
+        { q: '바다표범이 주로 사는 곳은?', a: ['북극', '남극', '열대'], correct: 1 },
+        { q: '물고기는 어떻게 숨을 쉴까?', a: ['허파', '아가미', '피부'], correct: 1 },
+        { q: '코알라는 주로 무엇을 먹을까?', a: ['유칼립투스 잎', '과일', '벌레'], correct: 0 },
+        { q: '돌고래의 언어를 연구하는 학문은?', a: ['동물학', '음향학', '해양학'], correct: 0 },
+        { q: '호랑이와 사자의 교배종 이름은?', a: ['라이거', '타사자', '호사자'], correct: 0 },
+        { q: '개구리는 어디에서 알을 낳을까?', a: ['나무 위', '물속', '땅속'], correct: 1 },
+        { q: '벌은 꽃에서 무엇을 모을까?', a: ['꿀', '꽃가루', '수액'], correct: 1 },
+        { q: '고래는 어떤 분류에 속할까?', a: ['어류', '포유류', '조류'], correct: 1 },
+        { q: '사자는 어떤 무리를 이루며 사나?', a: ['무리 없음', '프라이드', '떼'], correct: 1 },
+        { q: '염소는 주로 어떤 음식을 먹을까?', a: ['풀', '고기', '과일'], correct: 0 },
+        { q: '독수리의 시력은 사람보다 얼마나 좋은가?', a: ['5배', '10배', '20배'], correct: 1 },
+        { q: '개는 후각이 몇 배 더 발달했을까?', a: ['10배', '100배', '1000배'], correct: 2 },
+        { q: '나비는 몇 개의 날개를 가지고 있을까?', a: ['2개', '4개', '6개'], correct: 1 },
+        { q: '오리는 주로 어떤 소리를 내나?', a: ['꽥꽥', '멍멍', '짹짹'], correct: 0 },
+        { q: '참새는 어떤 종류의 새일까?', a: ['육식성', '잡식성', '초식성'], correct: 1 }
+    ],
+    nonsense: [
+        { q: '타이타닉의 구명보트는 몇 명이 탈 수 있을까?', a: ['9명', '90명', '없음'], correct: 0 },
+        { q: '초등학생이 가장 좋아하는 동네는?', a: ['방학동', '학교앞', '놀이터'], correct: 0 },
+        { q: '진짜 문제투성이인 것은?', a: ['신문', '시험지', '수학책'], correct: 1 },
+        { q: '폭력배가 많은 나라는?', a: ['칠레', '미국', '멕시코'], correct: 0 },
+        { q: '아무리 예뻐도 미녀라고 못하는 사람은?', a: ['미남', '아빠', '왕자'], correct: 0 },
+        { q: '세상에서 가장 빠른 닭은?', a: ['후다닥', '치킨', '도망닭'], correct: 0 },
+        { q: '못 팔고도 돈 번 사람은?', a: ['철물점 주인', '과일장수', '화가'], correct: 0 },
+        { q: '많이 맞을수록 좋은 것은?', a: ['시험문제', '비', '볼링'], correct: 0 },
+        { q: '날마다 가슴에 흑심을 품고 있는 사람은?', a: ['연필', '도둑', '연예인'], correct: 0 },
+        { q: '도둑이 가장 싫어하는 아이스크림은?', a: ['누가바', '빠삐코', '월드콘'], correct: 0 },
+        { q: '소가 가장 무서워하는 말은?', a: ['소피보러 간다', '도축장 가자', '우유 짜자'], correct: 0 },
+        { q: '한국에서 가장 급하게 만든 떡은?', a: ['헐레벌떡', '가래떡', '찰떡'], correct: 0 },
+        { q: '새 중에서 가장 빠른 새는?', a: ['눈깜짝할 새', '참새', '수리부엉이'], correct: 0 },
+        { q: '미소의 반대말은?', a: ['당기소', '웃지마', '찡그림'], correct: 0 },
+        { q: '친구들과 술값 안 내려고 추는 춤은?', a: ['주춤주춤', '발뺌춤', '슬로우'], correct: 0 },
+        { q: '호주의 돈은?', a: ['호주머니', '호주달러', '코알라페이'], correct: 0 },
+        { q: '노인들이 가장 좋아하는 목포는?', a: ['나이아가라 목포', '노포', '호포'], correct: 0 },
+        { q: '텔레토비가 차린 안경점 이름은?', a: ['아이조아', '렌즈팡팡', '뽀로로 안경'], correct: 0 },
+        { q: '엉덩이가 뚱뚱한 사람은?', a: ['엉뚱한 사람', '통통이', '힙합퍼'], correct: 0 },
+        { q: '소나타는 누가 탈까?', a: ['소', '사람', '운전자'], correct: 0 },
+        { q: '처녀가 타면 안 되는 차는?', a: ['아벨라', '벤츠', '카니발'], correct: 0 },
+        { q: '여자만 먹는 음식은?', a: ['여탕', '김치찌개', '빙수'], correct: 0 },
+        { q: '여자만 갖는 권리는?', a: ['여권', '민권', '투표권'], correct: 0 },
+        { q: '학생들이 싫어하는 피자는?', a: ['책 피자', '치즈피자', '페퍼로니'], correct: 0 },
+        { q: '신이 화가 나면?', a: ['신발끈', '천둥번개', '번개탄'], correct: 0 },
+        { q: '개가 사람을 가르친다를 네 글자로 줄이면?', a: ['개인지도', '견사람', '개가르침'], correct: 0 },
+        { q: '공이 웃으면?', a: ['풋볼', '농구', '배구'], correct: 0 },
+        { q: '광부가 가장 많은 나라는?', a: ['케냐', '칠레', '남아공'], correct: 0 },
+        { q: '울다가 다시 웃는 사람은?', a: ['아까운사람', '희비인물', '변덕쟁이'], correct: 0 },
+        { q: '세상에서 가장 쉬운 숫자는?', a: ['십구만', '일', '영'], correct: 0 }
+    ],
+
+    common: [
+        { q: '지구는 몇 개의 대륙으로 이루어져 있을까?', a: ['5개', '6개', '7개'], correct: 2 },
+        { q: '물의 화학식은?', a: ['H2O', 'CO2', 'NaCl'], correct: 0 },
+        { q: '태양계에서 가장 큰 행성은?', a: ['지구', '목성', '화성'], correct: 1 },
+        { q: '우리나라 수도는 어디일까?', a: ['부산', '서울', '인천'], correct: 1 },
+        { q: '사과는 어느 과일에 속할까?', a: ['감귤류', '장미과', '베리류'], correct: 1 },
+        { q: '비타민 C가 풍부한 과일은?', a: ['오렌지', '바나나', '사과'], correct: 0 },
+        { q: '한국 전쟁은 몇 년에 시작되었나?', a: ['1950년', '1945년', '1960년'], correct: 0 },
+        { q: '지구의 위성은 무엇일까?', a: ['화성', '달', '금성'], correct: 1 },
+        { q: '소금의 화학식은?', a: ['NaCl', 'H2O', 'CO2'], correct: 0 },
+        { q: '음식물이 소화되는 기관은?', a: ['심장', '위', '폐'], correct: 1 },
+        { q: '바다의 염분 농도는 약 얼마일까?', a: ['3.5%', '5%', '10%'], correct: 0 },
+        { q: '비행기가 하늘을 나는 원리는?', a: ['부력', '양력', '중력'], correct: 1 },
+        { q: '빛의 속도는?', a: ['약 30만 km/s', '약 15만 km/s', '약 10만 km/s'], correct: 0 },
+        { q: '나무가 이산화탄소를 흡수하는 과정은?', a: ['광합성', '호흡', '발효'], correct: 0 },
+        { q: '컴퓨터의 중앙처리장치 약자는?', a: ['CPU', 'RAM', 'GPU'], correct: 0 },
+        { q: '1년은 몇 일일까?', a: ['365일', '360일', '366일'], correct: 0 },
+        { q: '한글을 창제한 왕은?', a: ['세종대왕', '태조', '광개토대왕'], correct: 0 },
+        { q: '사과가 떨어지는 이유는?', a: ['중력', '풍력', '전자기력'], correct: 0 },
+        { q: '사람의 혈액형은 몇 가지가 있을까?', a: ['2가지', '4가지', '6가지'], correct: 1 },
+        { q: '물은 몇 도에서 끓을까?', a: ['100도', '90도', '80도'], correct: 0 },
+        { q: '세계에서 가장 긴 강은?', a: ['아마존강', '나일강', '한강'], correct: 1 },
+        { q: '달의 표면은?', a: ['바위와 먼지', '모래', '얼음'], correct: 0 },
+        { q: '지구의 대기 주요 성분은?', a: ['산소와 질소', '이산화탄소', '헬륨'], correct: 0 },
+        { q: '삼각형의 내각의 합은?', a: ['180도', '90도', '360도'], correct: 0 },
+        { q: '물이 얼 때 부피는 어떻게 될까?', a: ['늘어난다', '줄어든다', '변하지 않는다'], correct: 0 },
+        { q: '세계에서 가장 높은 산은?', a: ['에베레스트', '한라산', '킬리만자로'], correct: 0 },
+        { q: '컴퓨터에서 사용하는 1GB는 몇 MB인가?', a: ['1024MB', '1000MB', '512MB'], correct: 0 },
+        { q: '햇빛은 어떤 에너지일까?', a: ['열에너지', '전기에너지', '기계에너지'], correct: 0 },
+        { q: '한국의 국화는?', a: ['무궁화', '장미', '진달래'], correct: 0 },
+        { q: '피카소는 어느 분야의 예술가?', a: ['미술', '음악', '문학'], correct: 0 },
+        { q: '세계에서 가장 큰 대륙은?', a: ['아시아', '아프리카', '유럽'], correct: 0 }
+    ],
+    idiom: [
+        { q: '“가는 말이 고와야 오는 말이 곱다”의 의미는?', a: ['말조심', '인과응보', '상호존중'], correct: 2 },
+        { q: '“개구리 올챙이 적 생각 못한다”의 뜻은?', a: ['과거 망각', '변화 인정', '겸손'], correct: 0 },
+        { q: '“고생 끝에 낙이 온다”의 의미는?', a: ['희망', '절망', '포기'], correct: 0 },
+        { q: '“백문이 불여일견”의 뜻은?', a: ['경험 중요', '말보다 행동', '경청'], correct: 0 },
+        { q: '“식은 죽 먹기”의 의미는?', a: ['쉬움', '어려움', '불가능'], correct: 0 },
+        { q: '“우물 안 개구리”의 뜻은?', a: ['시야 좁음', '안정', '지혜'], correct: 0 },
+        { q: '“하늘이 무너져도 솟아날 구멍이 있다”의 의미는?', a: ['희망', '절망', '위기'], correct: 0 },
+        { q: '“등잔 밑이 어둡다”의 뜻은?', a: ['가까운 것을 모름', '어둠', '무지'], correct: 0 },
+        { q: '“닭 잡아먹고 오리발 내민다”의 의미는?', a: ['거짓말', '책임회피', '속임수'], correct: 2 },
+        { q: '“손에 익다”의 뜻은?', a: ['익숙함', '서툼', '초보'], correct: 0 },
+        { q: '“가는 날이 장날이다”의 의미는?', a: ['우연', '실패', '성공'], correct: 0 },
+        { q: '“눈에 넣어도 아프지 않다”의 뜻은?', a: ['사랑', '증오', '무관심'], correct: 0 },
+        { q: '“원숭이도 나무에서 떨어진다”의 의미는?', a: ['실수', '완벽', '재능'], correct: 0 },
+        { q: '“식은 죽 먹기”의 뜻은?', a: ['쉬움', '어려움', '불가능'], correct: 0 },
+        { q: '“소 잃고 외양간 고친다”의 의미는?', a: ['후회', '예방', '계획'], correct: 0 },
+        { q: '“바늘 도둑이 소 도둑 된다”의 뜻은?', a: ['작은 잘못이 큰 잘못', '용기', '책임'], correct: 0 },
+        { q: '“열 길 물속은 알아도 한 길 사람 속은 모른다”의 의미는?', a: ['사람 마음 모름', '자연 이해', '진실'], correct: 0 },
+        { q: '“콩 심은 데 콩 나고 팥 심은 데 팥 난다”의 뜻은?', a: ['원인과 결과', '운명', '행운'], correct: 0 },
+        { q: '“호랑이 굴에 가야 호랑이 새끼를 잡는다”의 의미는?', a: ['용기', '두려움', '포기'], correct: 0 },
+        { q: '“가재는 게 편이다”의 뜻은?', a: ['동류 편들기', '사랑', '우정'], correct: 0 },
+        { q: '“땅 짚고 헤엄치기”의 의미는?', a: ['쉬움', '어려움', '불가능'], correct: 0 },
+        { q: '“가는 말이 고와야 오는 말이 곱다”의 뜻은?', a: ['상호존중', '무시', '분노'], correct: 0 },
+        { q: '“달면 삼키고 쓰면 뱉는다”의 의미는?', a: ['이기심', '친절', '정직'], correct: 0 },
+        { q: '“마음이 급하면 손발이 느리다”의 뜻은?', a: ['조급함', '침착', '천천히'], correct: 0 },
+        { q: '“서당 개 삼 년에 풍월을 읊는다”의 의미는?', a: ['경험', '재능', '노력'], correct: 0 },
+        { q: '“백지장도 맞들면 낫다”의 뜻은?', a: ['협력', '경쟁', '독립'], correct: 0 },
+        { q: '“호랑이도 제 말하면 온다”의 의미는?', a: ['우연', '예언', '거짓말'], correct: 0 },
+        { q: '“빈 수레가 요란하다”의 뜻은?', a: ['겉만 번지르르', '속이 꽉 참', '조용함'], correct: 0 },
+        { q: '“원숭이도 나무에서 떨어진다”의 의미는?', a: ['실수', '완벽', '재능'], correct: 0 },
+        { q: '“제 눈에 안경”의 뜻은?', a: ['주관적 판단', '객관적 평가', '무시'], correct: 0 },
+        { q: '“열 번 찍어 안 넘어가는 나무 없다”의 의미는?', a: ['끈기', '포기', '노력'], correct: 0 }
+    ]
+};
+
+let currentCategory = null;
+let currentQuizIndex = 0;
+let score = 0;
+
+const categorySelection = document.getElementById('category-selection');
+const quizContainer = document.getElementById('quiz-container');
+const questionEl = document.getElementById('question');
+const answersEl = document.getElementById('answers');
+const resultContainer = document.getElementById('result-container');
+const resultEl = document.getElementById('result');
+
+function startQuiz(category) {
+    currentCategory = category;
+    currentQuizIndex = 0;
+    score = 0;
+    categorySelection.classList.add('hidden');
+    resultContainer.classList.add('hidden');
+    quizContainer.classList.remove('hidden');
+    showQuestion();
+}
+
+function showQuestion() {
+    const quiz = quizzes[currentCategory][currentQuizIndex];
+    questionEl.textContent = `Q${currentQuizIndex + 1}. ${quiz.q}`;
+    answersEl.innerHTML = '';
+    quiz.a.forEach((answer, index) => {
+        const btn = document.createElement('button');
+        btn.textContent = answer;
+        btn.onclick = () => selectAnswer(index);
+        answersEl.appendChild(btn);
+    });
+}
+
+function selectAnswer(index) {
+    const quiz = quizzes[currentCategory][currentQuizIndex];
+    if(index === quiz.correct) score++;
+    disableAnswers();
+}
+
+function disableAnswers() {
+    const buttons = answersEl.querySelectorAll('button');
+    buttons.forEach(btn => btn.disabled = true);
+}
+
+function nextQuestion() {
+    if (currentQuizIndex < quizzes[currentCategory].length - 1) {
+        currentQuizIndex++;
+        showQuestion();
+    } else {
+        showResult();
+    }
+}
+
+function showResult() {
+    quizContainer.classList.add('hidden');
+    resultContainer.classList.remove('hidden');
+    resultEl.textContent = `${quizzes[currentCategory].length}문제 중 ${score}문제 정답!`;
+}
+
+function restartQuiz() {
+    currentQuizIndex = 0;
+    score = 0;
+    resultContainer.classList.add('hidden');
+    quizContainer.classList.remove('hidden');
+    showQuestion();
+}
+
+function selectNewCategory() {
+    resultContainer.classList.add('hidden');
+    categorySelection.classList.remove('hidden');
+}
+
+</script>
+</body>
+</html>
